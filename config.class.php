@@ -20,7 +20,7 @@ class Config {
     private $pdoconfig;
     private $dbh;
 
-    function __construct($source=null, $props=array()){
+    function __construct(&$source=null, $props=array()){
         $config=array(
             'preload'       =>  false,
             'table'         =>  'config',
@@ -71,7 +71,7 @@ class Config {
                 $this->source='db';
                 break;
             case "object":
-                $this->source='db';
+                $this->source='object';
                 break;
         }
 
@@ -150,8 +150,10 @@ class Config {
 }
 
 require_once('pdo.config.private.php');
+require_once('../database/database.class.php');
+$db=new Database($pdoconfig);
 try {
-    $config = new Config($pdoconfig);
+    $config = new Config($db);
 } catch (Exception $e) {
     echo $e->getMessage();
 }
