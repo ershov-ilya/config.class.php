@@ -98,7 +98,7 @@ class Config {
     private function connect(){
         extract($this->pdoconfig);
         if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))){
-            break;
+            return false;
         }
         try
         {
