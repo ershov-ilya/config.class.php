@@ -15,29 +15,38 @@ defined( 'DEBUG') or define('DEBUG' , false) ;
 class Config {
     private $data;
     private $source;
+    private $connection;
+    private $db;
 
-    function __construct($source=NULL, $preload=true){
+    function __construct($source=null, $props=array()){
+        $config=array(
+            'preload'   =>  true
+        );
+        $config=array_merge($config, $props);
+
         $sourcetype=gettype($source);
         if(DEBUG) print 'sourcetype: '.$sourcetype.PHP_EOL;
 
+        $this->data=array();
         switch($sourcetype){
             case "NULL":
-                $this->data=array();
+                $this->source=null;
                 break;
             case "string":
                 $this->source='file';
-                $this->data=array();
                 break;
             case "array":
                 $this->source='db';
-                $this->data=array();
                 break;
             case "object":
                 $this->source='db';
-                $this->data=array();
                 break;
         }
 
+    }
+
+    function all(){
+        return $this->data;
     }
 
 //    public function __toString() {
@@ -50,10 +59,9 @@ class Config {
 }
 
 try {
-    $config = new Config();
+    $config = new Config('test.config');
 } catch (Exception $e) {
     echo $e->getMessage();
 }
 
-var_dump($config('test str'));
-die("Done\n");
+print_r($config->all());
