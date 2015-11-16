@@ -51,11 +51,19 @@ class Config {
                 $this->pdoconfig=$source;
                 if($config['preload']) {
                     $this->connect();
-                    $sql = "SELECT * FROM `".$config['table']."`";
-                    $stmt = $this->dbh->query($sql);
-                    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-                    $rows = $stmt->fetchAll();
-                    print_r($rows);
+                    if($this->connection){
+                        $sql = "SELECT * FROM `".$config['table']."`";
+                        $stmt = $this->dbh->query($sql);
+                        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+                        $rows = $stmt->fetchAll();
+                        if(isset($rows[0][$config['keyfield']])) {
+                            foreach ($rows as $row) {
+                                $k = $row[$config['keyfield']];
+                                unset($row[$config['keyfield']]);
+                                $this->data[$k]=$row;
+                            }
+                        } else return;
+                    }
                 }
 
                 $this->source='db';
@@ -95,9 +103,13 @@ class Config {
         return $this->data;
     }
 
-    public function __invoke($param, $required=false, $default=null) {
-        if(isset($this->data[$param])) return $this->data[$param];
+    public function __invoke($key, $required=false, $default=null) {
+        if(isset($this->data[$key])) return $this->data[$key];
         else return $default;
+    }
+
+    public function set($key, $value){
+        $this->data[$key]=$value;
     }
 }
 
