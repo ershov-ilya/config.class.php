@@ -25,7 +25,8 @@ class Config {
             'preload'       =>  true,
             'table'         =>  'config',
             'keyfield'      =>  'key',
-            'valuefield'    =>  'value'
+            'valuefield'    =>  'value',
+            'delimeter'     =>  ' '
         );
         $this->config=$config=array_merge($config, $props);
 
@@ -44,7 +45,7 @@ class Config {
                     $content=file($source);
                     foreach($content as $str){
                         $str=rtrim($str);
-                        $arr=explode(' ',$str,2);
+                        $arr=explode($config['delimeter'],$str,2);
                         $this->data[$arr[0]]=$arr[1];
                     }
                 }
