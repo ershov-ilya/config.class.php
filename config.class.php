@@ -9,7 +9,7 @@
  */
 
 header( 'Content-Type: text/plain; charset=utf-8' ) ;
-define('DEBUG' , true) ;
+//define('DEBUG' , true) ;
 defined( 'DEBUG') or define('DEBUG' , false) ;
 
 class Config {
@@ -124,7 +124,28 @@ class Config {
     }
 
     public function set($key, $value){
+        $config=$this->config;
         $this->data[$key]=$value;
+        if(!$this->connection) $this->connect();
+        /*
+         * INSERT INTO table (id,Col1,Col2) VALUES (1,1,1),(2,2,3),(3,9,3),(4,10,12)
+         * ON DUPLICATE KEY UPDATE Col1=VALUES(Col1),Col2=VALUES(Col2);
+         */
+        $sql="INSERT INTO `".$config['table']."` (`".$config['keyfield']."`,`".$config['valuefield']."`) VALUES (:key,:value) ON DUPLICATE KEY UPDATE ".$config['valuefield']."=VALUES(`".$config['valuefield']."`)";
+        if(DEBUG) print $sql.PHP_EOL;
+
+        $stmt = $this->dbh->prepare ($sql);
+        $stmt->bindParam(':key', $key);
+        $stmt->bindParam(':value', $value);
+        $res= $stmt->execute();
+        if(empty($res)) {
+            if(DEBUG){
+                print "ERROR:\n";
+                print_r($stmt->errorInfo());
+            }
+            return false;
+        }
+        return true;
     }
 
     public function get($key, $field=null){
@@ -162,17 +183,18 @@ class Config {
     }
 }
 
-require_once('pdo.config.private.php');
-require_once('../database/database.class.php');
-$db=new Database($pdoconfig);
-try {
-    $config = new Config($pdoconfig);
-} catch (Exception $e) {
-    echo $e->getMessage();
-}
-
-// DEBUG
-print $config.PHP_EOL;
-var_dump($config('report_sms_phone'));
-print $config.PHP_EOL;
-print_r($config->all());
+//require_once('pdo.config.private.php');
+//require_once('../database/database.class.php');
+//$db=new Database($pdoconfig);
+//try {
+//    $config = new Config($pdoconfig);
+//} catch (Exception $e) {
+//    echo $e->getMessage();
+//}
+//
+//// DEBUG
+//print $config.PHP_EOL;
+//var_dump($config('report_sms_phone'));
+//print $config.PHP_EOL;
+//print_r($config->all());
+//$config->set('test','nice');
