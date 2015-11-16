@@ -22,10 +22,10 @@ class Config {
 
     function __construct($source=null, $props=array()){
         $config=array(
-            'preload'   =>  true,
-            'table'     =>  'config',
-            'keyfield'  =>  'key',
-            'valuefield'  =>  'value'
+            'preload'       =>  false,
+            'table'         =>  'config',
+            'keyfield'      =>  'key',
+            'valuefield'    =>  'value'
         );
         $this->config=$config=array_merge($config, $props);
 
@@ -111,17 +111,22 @@ class Config {
 
     public function get($key, $field=null){
         if(empty($field)) $field=$this->config['valuefield'];
+        if(!$this->config['preload']){
+            if(empty($this->data[$key][$field])){
+                return 'Не загружено';
+            }
+        }
         return $this->data[$key][$field];
     }
 
     public function __invoke($key, $required=false, $default=null) {
-        if(isset($this->data[$key])) {
-            if($this->source=='db') return $this->data[$key][$this->config['valuefield']];
-            return $this->data[$key];
-        }
-        else return $default;
+        if($this->source=='db') return $this->get($key);
+        return $this->data[$key];
     }
 
+    public function __toString(){
+        return ($this->connection)?'соединение с БД открыто':'нет соединения с БД';
+    }
 }
 
 require_once('pdo.config.private.php');
@@ -131,5 +136,7 @@ try {
     echo $e->getMessage();
 }
 
+// DEBUG
 print_r($config->all());
 var_dump($config('report_sms_phone'));
+print $config;
