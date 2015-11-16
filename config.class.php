@@ -78,6 +78,10 @@ class Config {
         if(DEBUG) print 'source: '.$this->source.PHP_EOL;
     }
 
+    function __destruct() {
+        $this->dbh = null;
+    }
+
     private function connect(){
         extract($this->pdoconfig);
         if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))){
@@ -95,6 +99,7 @@ class Config {
             if(DEBUG) print 'Exception: ' . $e-> getMessage();
             if(function_exists('logMessage')) logMessage('Exception: ' . $e-> getMessage());
             $this->dbh = null;
+            $this->connection=false;
             return false;
         }
         $this->connection=true;
@@ -110,10 +115,25 @@ class Config {
     }
 
     public function get($key, $field=null){
-        if(empty($field)) $field=$this->config['valuefield'];
+        $config=$this->config;
+        if(empty($field)) $field=$config['valuefield'];
         if(!$this->config['preload']){
             if(empty($this->data[$key][$field])){
-                return 'Не загружено';
+                if(!$this->connection) $this->connect();
+                if($this->connection){
+                    $sql = "SELECT * FROM `".$config['table']."` WHERE `".$config['keyfield']."`='".$key."'";
+                    $stmt = $this->dbh->query($sql);
+                    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+                    $rows = $stmt->fetchAll();
+                    $row=$rows[0];
+                    if(isset($row[$config['keyfield']])) {
+                        $k = $row[$config['keyfield']];
+                        unset($row[$config['keyfield']]);
+                        $this->data[$k]=$row;
+                    }
+                    else
+                        return '';
+                }
             }
         }
         return $this->data[$key][$field];
@@ -137,6 +157,7 @@ try {
 }
 
 // DEBUG
-print_r($config->all());
+print $config.PHP_EOL;
 var_dump($config('report_sms_phone'));
-print $config;
+print $config.PHP_EOL;
+print_r($config->all());
