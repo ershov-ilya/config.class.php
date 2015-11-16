@@ -8,7 +8,7 @@
  * Time: 17:18
  */
 
-header( 'Content-Type: text/plain; charset=utf-8' ) ;
+//header( 'Content-Type: text/plain; charset=utf-8' ) ;
 //define('DEBUG' , true) ;
 defined( 'DEBUG') or define('DEBUG' , false) ;
 
@@ -179,7 +179,7 @@ class Config {
     }
 
     public function __toString(){
-        return ($this->connection)?'соединение с БД открыто':'нет соединения с БД';
+        return ($this->connection)?'DB connection is open':'No connection with DB';
     }
 }
 
