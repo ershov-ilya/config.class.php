@@ -16,19 +16,25 @@ class Config {
     private $data;
     private $source;
     private $connection;
-    private $db;
+    private $pdoconfig;
+    private $dbh;
 
     function __construct($source=null, $props=array()){
         $config=array(
-            'preload'   =>  true
+            'preload'   =>  true,
+            'table'     =>  'config',
+            'keyfield'  =>  'key'
         );
         $config=array_merge($config, $props);
+
+        $this->data=array();
+        $this->source=null;
+        $this->pdoconfig=null;
+        $this->connection=false;
 
         $sourcetype=gettype($source);
         if(DEBUG) print 'sourcetype: '.$sourcetype.PHP_EOL;
 
-        $this->data=array();
-        $this->source=null;
         switch($sourcetype){
             case "string":
                 if(is_file($source)) {
@@ -42,6 +48,16 @@ class Config {
                 }
                 break;
             case "array":
+                $this->pdoconfig=$source;
+                if($config['preload']) {
+                    $this->connect();
+                    $sql = "SELECT * FROM `".$config['table']."`";
+                    $stmt = $this->dbh->query($sql);
+                    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+                    $rows = $stmt->fetchAll();
+                    print_r($rows);
+                }
+
                 $this->source='db';
                 break;
             case "object":
@@ -52,24 +68,45 @@ class Config {
         if(DEBUG) print 'source: '.$this->source.PHP_EOL;
     }
 
+    private function connect(){
+        extract($this->pdoconfig);
+        if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))){
+            break;
+        }
+        try
+        {
+            /* @var PDO $DBH */
+            // Save stream
+            $this->dbh = $DBH = new PDO("$dbtype:host=$dbhost;dbname=$dbname" , $dbuser, $dbpass,
+                array (PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'")
+            );
+        }
+        catch (PDOException $e ) {
+            if(DEBUG) print 'Exception: ' . $e-> getMessage();
+            if(function_exists('logMessage')) logMessage('Exception: ' . $e-> getMessage());
+            $this->dbh = null;
+            return false;
+        }
+        $this->connection=true;
+        return true;
+    }
+
     function all(){
         return $this->data;
     }
 
-//    public function __toString() {
-//        return 'foo';
-//    }
-
-    public function __invoke($param, $required=false, $default='') {
-        return $this->data[$param];
+    public function __invoke($param, $required=false, $default=null) {
+        if(isset($this->data[$param])) return $this->data[$param];
+        else return $default;
     }
 }
 
+require_once('pdo.config.private.php');
 try {
-    $config = new Config('test.config');
+    $config = new Config($pdoconfig);
 } catch (Exception $e) {
     echo $e->getMessage();
 }
 
 print_r($config->all());
-print $config('key1');
+var_dump($config('key3'));
