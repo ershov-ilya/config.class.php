@@ -14,6 +14,7 @@ defined( 'DEBUG') or define('DEBUG' , false) ;
 
 class Config {
     private $data;
+    private $config;
     private $source;
     private $connection;
     private $pdoconfig;
@@ -23,9 +24,10 @@ class Config {
         $config=array(
             'preload'   =>  true,
             'table'     =>  'config',
-            'keyfield'  =>  'key'
+            'keyfield'  =>  'key',
+            'valuefield'  =>  'value'
         );
-        $config=array_merge($config, $props);
+        $this->config=$config=array_merge($config, $props);
 
         $this->data=array();
         $this->source=null;
@@ -103,14 +105,23 @@ class Config {
         return $this->data;
     }
 
-    public function __invoke($key, $required=false, $default=null) {
-        if(isset($this->data[$key])) return $this->data[$key];
-        else return $default;
-    }
-
     public function set($key, $value){
         $this->data[$key]=$value;
     }
+
+    public function get($key, $field=null){
+        if(empty($field)) $field=$this->config['valuefield'];
+        return $this->data[$key][$field];
+    }
+
+    public function __invoke($key, $required=false, $default=null) {
+        if(isset($this->data[$key])) {
+            if($this->source=='db') return $this->data[$key][$this->config['valuefield']];
+            return $this->data[$key];
+        }
+        else return $default;
+    }
+
 }
 
 require_once('pdo.config.private.php');
@@ -121,4 +132,4 @@ try {
 }
 
 print_r($config->all());
-var_dump($config('key3'));
+var_dump($config('report_sms_phone'));
