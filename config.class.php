@@ -22,7 +22,7 @@ class Config {
 
     function __construct(&$source=null, $props=array()){
         $config=array(
-            'preload'       =>  false,
+            'preload'       =>  true,
             'table'         =>  'config',
             'keyfield'      =>  'key',
             'valuefield'    =>  'value'
@@ -51,28 +51,41 @@ class Config {
                 break;
             case "array":
                 $this->pdoconfig=$source;
-                if($config['preload']) {
-                    $this->connect();
-                    if($this->connection){
-                        $sql = "SELECT * FROM `".$config['table']."`";
-                        $stmt = $this->dbh->query($sql);
-                        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-                        $rows = $stmt->fetchAll();
-                        if(isset($rows[0][$config['keyfield']])) {
-                            foreach ($rows as $row) {
-                                $k = $row[$config['keyfield']];
-                                unset($row[$config['keyfield']]);
-                                $this->data[$k]=$row;
-                            }
-                        } else return;
-                    }
-                }
-
-                $this->source='db';
+                $this->source='direct';
                 break;
             case "object":
-                $this->source='object';
+                if(class_exists('Database')){
+                    if($source instanceof Database) {
+                        $this->dbh = &$source->dbh;
+                        $this->source='Database';
+                        $this->connection=true;
+                    }
+                }
+                if(class_exists('PDO')){
+                    if($source instanceof PDO) {
+                        $this->dbh = &$source;
+                        $this->source='PDO';
+                        $this->connection=true;
+                    }
+                }
                 break;
+        }
+
+        if($config['preload']) {
+            if(!$this->connection) $this->connect();
+            if($this->connection){
+                $sql = "SELECT * FROM `".$config['table']."`";
+                $stmt = $this->dbh->query($sql);
+                $stmt->setFetchMode(PDO::FETCH_ASSOC);
+                $rows = $stmt->fetchAll();
+                if(isset($rows[0][$config['keyfield']])) {
+                    foreach ($rows as $row) {
+                        $k = $row[$config['keyfield']];
+                        unset($row[$config['keyfield']]);
+                        $this->data[$k]=$row;
+                    }
+                } else return;
+            }
         }
 
         if(DEBUG) print 'source: '.$this->source.PHP_EOL;
@@ -153,7 +166,7 @@ require_once('pdo.config.private.php');
 require_once('../database/database.class.php');
 $db=new Database($pdoconfig);
 try {
-    $config = new Config($db);
+    $config = new Config($pdoconfig);
 } catch (Exception $e) {
     echo $e->getMessage();
 }
