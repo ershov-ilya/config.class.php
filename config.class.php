@@ -49,6 +49,7 @@ class Config {
                 break;
         }
 
+        if(DEBUG) print 'source: '.$this->source.PHP_EOL;
     }
 
     function all(){
@@ -60,7 +61,7 @@ class Config {
 //    }
 
     public function __invoke($param, $required=false, $default='') {
-        return "invoke ".$param;
+        return $this->data[$param];
     }
 }
 
@@ -71,3 +72,4 @@ try {
 }
 
 print_r($config->all());
+print $config('key1');
