@@ -28,12 +28,18 @@ class Config {
         if(DEBUG) print 'sourcetype: '.$sourcetype.PHP_EOL;
 
         $this->data=array();
+        $this->source=null;
         switch($sourcetype){
-            case "NULL":
-                $this->source=null;
-                break;
             case "string":
-                $this->source='file';
+                if(is_file($source)) {
+                    $this->source = 'file';
+                    $content=file($source);
+                    foreach($content as $str){
+                        $str=rtrim($str);
+                        $arr=explode(' ',$str,2);
+                        $this->data[$arr[0]]=$arr[1];
+                    }
+                }
                 break;
             case "array":
                 $this->source='db';
