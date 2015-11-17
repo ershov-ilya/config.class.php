@@ -30,7 +30,8 @@ class Config {
             'table'         =>  'config',
             'keyfield'      =>  'key',
             'valuefield'    =>  'value',
-            'delimeter'     =>  ' '
+            'file_delimiter'     =>  ' ',
+            'file_strip_first_line'  =>  false
         );
         $this->config=$config=array_merge($config, $props);
 
@@ -47,16 +48,17 @@ class Config {
                 if(is_file($source)) {
                     $this->source = 'file';
                     $content=file($source);
+                    if($config['file_strip_first_line']) unset($content[0]);
                     foreach($content as $str){
                         $str=rtrim($str);
-                        $arr=explode($config['delimeter'],$str,2);
+                        $arr=explode($config['file_delimiter'],$str,2);
                         $this->data[$arr[0]]=$arr[1];
                     }
                 }
                 break;
             case "array":
                 $this->pdoconfig=$source;
-                $this->source='direct';
+                $this->source='pdoconfig';
                 break;
             case "object":
                 if(class_exists('Database')){
@@ -101,7 +103,7 @@ class Config {
     }
 
     private function connect(){
-        if($this->source == 'file') return false;
+        if($this->source != 'pdoconfig') return false;
         extract($this->pdoconfig);
         if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))){
             return false;
@@ -159,7 +161,7 @@ class Config {
     public function get($key, $field=null){
         $config=$this->config;
         if(empty($field)) $field=$config['valuefield'];
-        if(!$this->config['preload']){
+        if(!$config['preload']){
             if(empty($this->data[$key][$field])){
                 if(!$this->connection) $this->connect();
                 if($this->connection){
@@ -181,9 +183,17 @@ class Config {
         return ($this->data[$key][$field])?($this->data[$key][$field]):(null);
     }
 
-    public function __invoke($key, $required=false, $default=null) {
-        if($this->source=='db') return $this->get($key);
-        return $this->data[$key];
+    public function __invoke($key, $default=null, $save=false) {
+        if($this->source=='file') return $this->data[$key];
+        $value=$this->get($key);
+        if($value === null){
+            $value=$default;
+            if($save){
+                $this->set($key, $default);
+            }
+        }
+
+        return $value;
     }
 
     public function __toString(){
@@ -197,13 +207,17 @@ class Config {
 //
 //try {
 //    $file='test.config';
-//    $config = new Config($file);
+//    $config = new Config($db);
 //} catch (Exception $e) {
 //    echo $e->getMessage();
 //}
 //
 //// DEBUG
-//var_dump($config('report_sms_phone'));
 //print $config.PHP_EOL;
 //print_r($config->all());
 //$config->set('test','nice');
+//print "key(report_sms_phone):\n";
+//var_dump($config('report_sms_phone'));
+//print "key(report_sms_phone2):\n";
+//var_dump($config('report_sms_phone2', '+79213309363', true));
+
