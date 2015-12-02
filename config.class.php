@@ -180,7 +180,24 @@ class Config {
                 }
             }
         }
-        if(isset($this->data[$key][$field])) return $this->data[$key][$field];
+        if(isset($this->data[$key][$field])) {
+            $value=$this->data[$key][$field];
+            switch($value){
+                case '0':
+                    $value=0;
+                    break;
+                case '1':
+                    $value=1;
+                    break;
+                case 'true':
+                    $value=true;
+                    break;
+                case 'false':
+                    $value=false;
+                    break;
+            }
+            return $value;
+        }
         return null;
     }
 
