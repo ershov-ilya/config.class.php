@@ -180,7 +180,8 @@ class Config {
                 }
             }
         }
-        return ($this->data[$key][$field])?($this->data[$key][$field]):(null);
+        if(isset($this->data[$key][$field])) return $this->data[$key][$field];
+        return null;
     }
 
     public function __invoke($key, $default=null, $save=false) {
